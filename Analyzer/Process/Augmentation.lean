@@ -81,6 +81,12 @@ def pushTactic (stx : Syntax) (tac : Syntax) : Syntax := Id.run do
 
 end Lean.Syntax
 
+def setOptions (opts : Lean.Options) : Lean.Options :=
+  opts
+    |>.set pp.fieldNotation.name false
+    |>.set pp.fullNames.name true
+
+
 def goal2ToDecl (goal1 goal2 : MVarId) (name : Name) : MetaM (TSyntax `command) :=
   withEnableInfoTree false <| goal1.withContext do
     let type2 ← instantiateMVars (← goal2.getType)
@@ -88,6 +94,7 @@ def goal2ToDecl (goal1 goal2 : MVarId) (name : Name) : MetaM (TSyntax `command) 
     goal1.modifyLCtx fun lctx =>
       lctx.mkLocalDecl newFVarId `hg2 type2
     goalToDecl goal1 name
+
 
 @[delab app]
 def delabCoeWithType : Delab := whenPPOption getPPCoercions do
@@ -106,19 +113,26 @@ def delabCoeWithType : Delab := whenPPOption getPPCoercions do
         withNaryArg info.coercee delab
     | .coeSort => `((↥$(← withNaryArg info.coercee delab) : $typeStx))
 
+
+
 namespace Analyzer.Process.Augmentation
 
+
 initialize augProofRef : IO.Ref (Array AugmentInfo) ← IO.mkRef #[]
+
+-- def processNamespace (opdl : OpenDecl) : Name :=
+--   match opdl with
+--   | .simple ns ex => ns
+--   | .explicit id decl => id
 
 def getAugmented (stx : Syntax) : CommandElabM Unit := do
   -- elabCommand stx
   elabDeclaration stx
   let tacSeq := stx.getTacticSeq'.toList
+  let opl ← getOpenDecls
   let trees ← getInfoTrees
---   let mut newProofs : Array Syntax := #[]
   for tree in trees do
-    let bi_enumerator := (List.productTR tacSeq.enum tacSeq.enum).filter
-      fun ((i, _), (j, _)) => i < j
+    let bi_enumerator := (List.productTR tacSeq.enum tacSeq.enum).filter fun ((i, _), (j, _)) => i < j
     for ((_, tac1), (_, tac2)) in bi_enumerator do
       let posStart := tac1.getPos?.getD 0
       let posEnd   := tac2.getTailPos?.getD 0
@@ -128,25 +142,27 @@ def getAugmented (stx : Syntax) : CommandElabM Unit := do
           match g2.tacticInfo.goalsAfter.head? with
           | none              => -- If there are no goals after, we only need to augment the proof
             let name          := Name.mkSimple s!"aug_{posStart}_end"
-            let statement     := (g1.ctxInfo.runMetaM {} (goalToDecl goalStart name))
+            let statement     := (g1.ctxInfo.runMetaM {} (withOptions setOptions $ goalToDecl goalStart name))
             let proofAfter    := stx.getProofAfter posStart
             let newProof      := (← statement).raw.setProof proofAfter
             let strProof      := toString $ ← liftCoreM $ ppTactic ⟨newProof⟩
+            let strProofF      := toString $ ← liftCoreM $ withOptions setOptions $ ppTactic ⟨newProof⟩
             let strStatement  := toString $ ← liftCoreM $ ppTactic ⟨← statement⟩
-            augProofRef.modify fun a => a.push $ ⟨stx, strStatement, strProof⟩-- newProofs := newProofs.push newProof
+            let strStatementF  := toString $ ← liftCoreM $ withOptions setOptions $ ppTactic ⟨← statement⟩
+            augProofRef.modify fun a => a.push $ ⟨stx, strStatement, strStatementF, strProof, strProofF, toString opl⟩-- newProofs := newProofs.push newProof
           | some goalAfter    => -- If there are goals after, we need to augment the proof and add a new goal
             let name          := Name.mkSimple s!"aug_{posStart}_{posEnd}"
             try
-              let statement   := (g1.ctxInfo.runMetaM {} (goal2ToDecl goalStart goalAfter name))
+              let statement   := (g1.ctxInfo.runMetaM {} (withOptions setOptions $ goal2ToDecl goalStart goalAfter name))
               let proofWithin := stx.getProofWithin posStart posEnd
-              let addedHyp    := mkIdent `hg2
-              let addedExact  ← `(tactic | exact $addedHyp)
+              let addedExact  ← `(tactic | exact $(mkIdent `hg2))
               let proofWithin := proofWithin.pushTactic addedExact.raw
               let newProof    := (← statement).raw.setProof proofWithin
-              let strProof      := toString $ ← liftCoreM $ ppTactic ⟨newProof⟩
+              let strProof   := toString $ ← liftCoreM $ ppTactic ⟨newProof⟩
+              let strProofF      := toString $ ← liftCoreM $ withOptions setOptions $ ppTactic ⟨newProof⟩
               let strStatement  := toString $ ← liftCoreM $ ppTactic ⟨← statement⟩
-            --   newProofs       := newProofs.push newProof
-              augProofRef.modify fun a => a.push $ ⟨stx, strStatement, strProof⟩
+              let strStatementF  := toString $ ← liftCoreM $ withOptions setOptions $ ppTactic ⟨← statement⟩
+              augProofRef.modify fun a => a.push $ ⟨stx, strStatement, strStatementF, strProof, strProofF, toString opl⟩
             catch _ => continue
   throwUnsupportedSyntax
 
@@ -155,7 +171,7 @@ def onLoad : CommandElabM Unit := do
   modifyEnv fun env => env |>
   (Delaborator.delabAttribute.ext.addEntry ·
   {
-    key := ``Parser.Term.app,
+    key := `app,
     declName := ``delabCoeWithType,
     value := delabCoeWithType,
   }) |>

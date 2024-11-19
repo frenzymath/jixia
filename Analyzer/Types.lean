@@ -113,7 +113,11 @@ structure LineInfo where
 structure AugmentInfo where
   ref : Syntax
   formalStatement : String
+  formalStatementFullname : String
   formalProof : String
+  formalProofFullname : String
+  openedNamespaces : String
+
 
 
 end Analyzer

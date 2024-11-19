@@ -1,2 +1,5 @@
 .lake/
 /Example.*.json
+/scripts/jixia-data-aug-v4.13.0
+/scripts/jixia-data-aug-v4.13.0-combined.json
+jixia-data-aug-v4.13.0.tar
