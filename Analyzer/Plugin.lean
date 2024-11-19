@@ -9,6 +9,7 @@ import Analyzer.Process.Declaration
 import Analyzer.Process.Symbol
 import Analyzer.Process.Elaboration
 import Analyzer.Process.Line
+import Analyzer.Process.Augmentation
 
 open Lean
 
@@ -23,7 +24,8 @@ protected def plugins : Array (Name × Plugin) := #[
   (`declaration, ⟨ ``Declaration.getResult, ``Declaration.onLoad ⟩),
   (`symbol, ⟨ ``Symbol.getResult, none ⟩),
   (`elaboration, ⟨ ``Elaboration.getResult, ``Elaboration.onLoad ⟩),
-  (`line, ⟨ ``Line.getResult, ``Line.onLoad ⟩)
+  (`line, ⟨ ``Line.getResult, ``Line.onLoad ⟩),
+  (`augmentation, ⟨``Augmentation.getResult, ``Augmentation.onLoad⟩)
 ]
 
 end Analyzer.Process

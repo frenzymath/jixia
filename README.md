@@ -9,6 +9,17 @@ This project is part of BICMR@PKU AI for math program.
 
 *jixia* stands for *稷下*, where [稷下学宫](https://en.wikipedia.org/wiki/Jixia_Academy) was historically located.
 
+### Forked Version
+
+This is a forked version of Jixia, aiming at an quick proof augmentation process.
+
+#### Usage
+
+- Augmentation: obtain augmentation result in a single `json` file.
+```sh
+/path/to/jixia -u Example.aug.json Example.lean
+```
+
 ### Features
 
 - Non-instrusive:  No change need to be made on the target file.  This improves cache utilization, notably on mathlib4.

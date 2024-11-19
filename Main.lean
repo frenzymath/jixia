@@ -54,6 +54,7 @@ def jixiaCommand : Cmd := `[Cli|
     e, elaboration : String;  "Elaboration info"
     l, line : String;  "Line info"
     a, ast : String;  "AST"
+    u, augmentation : String; "Augmented proofs"
     i, initializer;  "Execute initializers"
 
   ARGS:
