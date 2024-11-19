@@ -91,5 +91,9 @@ instance : ToJson ElaborationTree where
 end
 
 deriving instance ToJson for SourceInfo, Syntax.Preresolved, Syntax
-
+section
+local instance : ToJson Syntax where
+  toJson x := toJson x.getRange?
+deriving instance ToJson for AugmentInfo
+end
 end Analyzer

@@ -1,5 +1,6 @@
 import Lean
 import Metalib.Declaration
+import Analyzer.Types
 
 open Lean Elab Meta Command Syntax Parser Tactic
 open Lean PrettyPrinter Delaborator SubExpr
@@ -19,14 +20,10 @@ def setArgr (stx: Syntax) (locs: List Nat) (arg: Syntax) : Syntax :=
   | .nil => arg
   | .cons i it => stx.setArg i $ stx[i].setArgr it arg
 
-
 def setArgsr (stx: Syntax) (locs: List Nat) (args: Array Syntax) : Syntax :=
   match locs with
   | .nil => stx.setArgs args
   | .cons i it => stx.setArg i $ stx[i].setArgsr it args
-
--- def dedupSyntax : List Syntax → List Syntax :=
---   List.pwFilter (toString · ≠ toString ·)
 
 def getProof (stx : Syntax) : Syntax :=
   match stx[1].getKind with
@@ -111,7 +108,7 @@ def delabCoeWithType : Delab := whenPPOption getPPCoercions do
 
 namespace Analyzer.Process.Augmentation
 
-initialize augProofRef : IO.Ref (Array String) ← IO.mkRef #[]
+initialize augProofRef : IO.Ref (Array AugmentInfo) ← IO.mkRef #[]
 
 def getAugmented (stx : Syntax) : CommandElabM Unit := do
   -- elabCommand stx
@@ -120,7 +117,6 @@ def getAugmented (stx : Syntax) : CommandElabM Unit := do
   let trees ← getInfoTrees
 --   let mut newProofs : Array Syntax := #[]
   for tree in trees do
-
     let bi_enumerator := (List.productTR tacSeq.enum tacSeq.enum).filter
       fun ((i, _), (j, _)) => i < j
     for ((_, tac1), (_, tac2)) in bi_enumerator do
@@ -135,8 +131,9 @@ def getAugmented (stx : Syntax) : CommandElabM Unit := do
             let statement     := (g1.ctxInfo.runMetaM {} (goalToDecl goalStart name))
             let proofAfter    := stx.getProofAfter posStart
             let newProof      := (← statement).raw.setProof proofAfter
-            let strProof ← liftCoreM $ ppTactic ⟨newProof⟩
-            augProofRef.modify fun a => a.push $ toString strProof-- newProofs := newProofs.push newProof
+            let strProof      := toString $ ← liftCoreM $ ppTactic ⟨newProof⟩
+            let strStatement  := toString $ ← liftCoreM $ ppTactic ⟨← statement⟩
+            augProofRef.modify fun a => a.push $ ⟨stx, strStatement, strProof⟩-- newProofs := newProofs.push newProof
           | some goalAfter    => -- If there are goals after, we need to augment the proof and add a new goal
             let name          := Name.mkSimple s!"aug_{posStart}_{posEnd}"
             try
@@ -146,9 +143,10 @@ def getAugmented (stx : Syntax) : CommandElabM Unit := do
               let addedExact  ← `(tactic | exact $addedHyp)
               let proofWithin := proofWithin.pushTactic addedExact.raw
               let newProof    := (← statement).raw.setProof proofWithin
-              let strProof ← liftCoreM $ ppTactic ⟨newProof⟩
+              let strProof      := toString $ ← liftCoreM $ ppTactic ⟨newProof⟩
+              let strStatement  := toString $ ← liftCoreM $ ppTactic ⟨← statement⟩
             --   newProofs       := newProofs.push newProof
-              augProofRef.modify fun a => a.push $ toString strProof
+              augProofRef.modify fun a => a.push $ ⟨stx, strStatement, strProof⟩
             catch _ => continue
   throwUnsupportedSyntax
 
@@ -168,6 +166,6 @@ def onLoad : CommandElabM Unit := do
       value := getAugmented,
   })
 
-def getResult : CommandElabM (Array String) := augProofRef.get
+def getResult : CommandElabM (Array AugmentInfo) := augProofRef.get
 
 end Analyzer.Process.Augmentation

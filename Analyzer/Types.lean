@@ -109,4 +109,11 @@ structure LineInfo where
   start : String.Pos
   state : Array Goal
 
+
+structure AugmentInfo where
+  ref : Syntax
+  formalStatement : String
+  formalProof : String
+
+
 end Analyzer
