@@ -36,10 +36,10 @@ where
 def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := do
   let kind := match info with
     | .axiomInfo _ => .«axiom»
-    | .defnInfo _ => .«def»
+    | .defnInfo _ => .definition
     | .thmInfo _ => .«theorem»
     | .opaqueInfo _ => .«opaque»
-    | .quotInfo _ => .quot
+    | .quotInfo _ => .quotient
     | .inductInfo _ => .«inductive»
     | .ctorInfo _ => .constructor
     | .recInfo _ => .recursor

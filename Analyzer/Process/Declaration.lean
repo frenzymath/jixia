@@ -170,7 +170,7 @@ def getConstructorInfo (parentName : Name) (stx : Syntax) : CommandElabM BaseDec
 
   let (ref, signature) ← liftCoreM do pure (← PPSyntax.pp `command stx, ← PPSyntax.pp `term signature)
   return {
-    kind := "ctor",
+    kind := "constructor",
     ref,
     id,
     name,

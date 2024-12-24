@@ -73,10 +73,10 @@ def DeclarationInfo.toBaseDeclarationInfo : DeclarationInfo → BaseDeclarationI
 
 inductive SymbolKind where
   | «axiom» : SymbolKind
-  | «def» : SymbolKind
+  | definition : SymbolKind
   | «theorem» : SymbolKind
   | «opaque» : SymbolKind
-  | quot : SymbolKind
+  | quotient : SymbolKind
   | «inductive» : SymbolKind
   | constructor : SymbolKind
   | recursor : SymbolKind
