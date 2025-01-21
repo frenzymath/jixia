@@ -35,14 +35,14 @@ where
 
 def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := do
   let kind := match info with
-    | .axiomInfo _ => "axiom"
-    | .defnInfo _ => "def"
-    | .thmInfo _ => "theorem"
-    | .opaqueInfo _ => "opaque"
-    | .quotInfo _ => "quot"
-    | .inductInfo _ => "inductive"
-    | .ctorInfo _ => "constructor"
-    | .recInfo _ => "recursor"
+    | .axiomInfo _ => .«axiom»
+    | .defnInfo _ => .definition
+    | .thmInfo _ => .«theorem»
+    | .opaqueInfo _ => .«opaque»
+    | .quotInfo _ => .quotient
+    | .inductInfo _ => .«inductive»
+    | .ctorInfo _ => .constructor
+    | .recInfo _ => .recursor
   let type := info.toConstantVal.type
   let isProp ← try
     let prop := Expr.sort 0

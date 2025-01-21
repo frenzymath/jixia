@@ -7,7 +7,8 @@ import Lean
 import Metalib.Info
 import Analyzer.Types
 
-open Lean Elab Meta Tactic
+open Lean Elab Tactic PrettyPrinter
+open Meta hiding ppExpr
 
 namespace Analyzer.Goal
 
@@ -19,11 +20,12 @@ def printContext : MetaM (Array Variable) := do
     if ldecl.isImplementationDetail then
       continue
     let var ← match ldecl with
-    | .cdecl _ id name type .. => do
+    | .cdecl _ id name type bi .. => do
       let type ← instantiateMVars type
       pure {
         id := id.name,
         name := name.simpMacroScopes,
+        binderInfo? := some bi,
         type := (← ppExpr type).pretty,
         value? := none,
         isProp := (← inferType type).isProp,
@@ -33,6 +35,7 @@ def printContext : MetaM (Array Variable) := do
       pure {
         id := id.name,
         name := name.simpMacroScopes,
+        binderInfo? := none,
         type := (← ppExpr type).pretty,
         value? := (← ppExpr value).pretty,
         isProp := (← inferType type).isProp,
@@ -42,7 +45,7 @@ def printContext : MetaM (Array Variable) := do
 
 -- see Meta.ppGoal
 def fromMVar (goal : MVarId) (extraFun : MVarId → MetaM (Option Json) := fun _ => pure none) : MetaM Goal :=
-  withEnableInfoTree false <| goal.withContext do
+  goal.withContext do
     let context ← printContext
     let type ← goal.getType
     let tag ← goal.getTag
@@ -51,7 +54,7 @@ def fromMVar (goal : MVarId) (extraFun : MVarId → MetaM (Option Json) := fun _
       tag,
       context,
       mvarId := goal.name,
-      type := (← ppExpr type).pretty,
+      type := (← ppTerm (← delab type)).pretty,
       isProp := (← inferType type).isProp,
       extra?,
     }

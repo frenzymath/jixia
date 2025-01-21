@@ -10,28 +10,51 @@ Note on source ranges: we encode all source positions/ranges by byte.
 -/
 
 open Lean hiding HashSet
-open Elab Term
+open Elab Term PrettyPrinter
 open Std (HashSet)
 
 namespace Analyzer
+
+structure PPSyntax where
+  original : Bool
+  range : Option String.Range
+  str : String
+
+def _root_.Lean.Syntax.isOriginal (stx : Syntax) : Bool :=
+  match stx.getHeadInfo? with
+  | some (.original ..) => true
+  | _ => false
+
+def PPSyntax.pp (category : Name) (stx : Syntax) : CoreM PPSyntax := do
+  pure {
+    original := stx.isOriginal,
+    range := stx.getRange?,
+    str := (← ppCategory category stx).pretty,
+  }
+
+structure PPSyntaxWithKind extends PPSyntax where
+  kind : Name
+
+def PPSyntaxWithKind.pp (category : Name) (stx : Syntax) : CoreM PPSyntaxWithKind := do
+  pure { ← (PPSyntax.pp category stx) with kind := stx.getKind }
 
 structure ScopeInfo where
   varDecls : Array String
   includeVars : Array Name
   omitVars : Array Name
   levelNames : Array Name
+  currNamespace : Name
+  openDecl : List OpenDecl
 
 /-- Information about a declaration command in source file. -/
 structure BaseDeclarationInfo where
   kind : String
-  ref : Syntax
+  ref : PPSyntax
   /-- Syntax node corresponding to the name of this declaration. -/
   id : Syntax
-  /-- The identifier contained in `id`, even if it is generated. -/
   name : Name
-  fullname : Name
   modifiers : Modifiers
-  signature : Syntax
+  signature : PPSyntax
   params : Array BinderView
   type : Option Syntax
   value : Option Syntax
@@ -48,8 +71,18 @@ def DeclarationInfo.toBaseDeclarationInfo : DeclarationInfo → BaseDeclarationI
   | .ofBase info => info
   | .ofInductive info => info.toBaseDeclarationInfo
 
+inductive SymbolKind where
+  | «axiom» : SymbolKind
+  | definition : SymbolKind
+  | «theorem» : SymbolKind
+  | «opaque» : SymbolKind
+  | quotient : SymbolKind
+  | «inductive» : SymbolKind
+  | constructor : SymbolKind
+  | recursor : SymbolKind
+
 structure SymbolInfo where
-  kind : String
+  kind : SymbolKind
   name : Name
   type : String
   /-- Names of constants that the type of this symbol references.  Mathematically, this roughly means "notions
@@ -63,6 +96,7 @@ structure SymbolInfo where
 structure Variable where
   id : Name
   name : Name
+  binderInfo? : Option BinderInfo
   type : String
   value? : Option String
   isProp : Bool

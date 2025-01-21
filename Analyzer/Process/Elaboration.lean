@@ -7,7 +7,7 @@ import Lean
 import Analyzer.Process.Tactic.Simp
 
 open Lean hiding HashSet HashMap
-open Elab Meta Command Tactic TacticM
+open Elab Meta Command Tactic TacticM PrettyPrinter.Delaborator SubExpr
 open Std (HashSet HashMap)
 
 namespace Analyzer.Process.Elaboration
@@ -66,6 +66,11 @@ def getUsedInfo (mvar : MVarId) : MetaM (Option Json) := do
     valueUses: $(valueUses)
   }
 
+def setOptions (opts : Lean.Options) : Lean.Options :=
+  opts
+    |>.set pp.fieldNotation.name false
+    |>.set pp.fullNames.name true
+
 def getTacticInfo (ci : ContextInfo) (ti : TacticInfo) : IO TacticElabInfo := do
   let mut extra := Json.null
   try
@@ -91,17 +96,16 @@ def getTacticInfo (ci : ContextInfo) (ti : TacticInfo) : IO TacticElabInfo := do
     let extra ← getUsedInfo mvar
     return do return .mergeObj (← extra) (← dependencies.get? mvar)
 
+  let before ← TacticM.runWithInfoBefore ci ti <| withOptions setOptions <|
+    Goal.fromTactic (extraFun := getUsedInfo')
+  let after ← TacticM.runWithInfoBefore ci ti <| withOptions setOptions <|
+    Goal.fromTactic (extraFun := getUsedInfo)
   pure {
     references := references ti.stx,
-    before := ← Goal.fromTactic (extraFun := getUsedInfo') |>.runWithInfoBefore ci ti,
-    after := ← Goal.fromTactic (extraFun := getUsedInfo) |>.runWithInfoAfter ci ti,
+    before,
+    after,
     extra? := if extra.isNull then none else extra,
   : TacticElabInfo}
-
-def setOptions (opts : Lean.Options) : Lean.Options :=
-  opts
-    |>.set pp.fieldNotation.name false
-    |>.set pp.fullNames.name true
 
 def getSpecialValue : Expr → Option SpecialValue
   | .const name .. => some <| .const name
@@ -116,6 +120,23 @@ def getTermInfo (ci : ContextInfo) (ti : TermInfo) : IO (Option TermElabInfo) :=
     value := (← ppExpr ti.expr).pretty
     special? := getSpecialValue ti.expr
   } catch _ => pure none
+
+@[delab app]
+def delabCoeWithType : Delab := whenPPOption getPPCoercions do
+  let typeStx ← withType delab
+  let e ← getExpr
+  let .const declName _ := e.getAppFn | failure
+  let some info ← Meta.getCoeFnInfo? declName | failure
+  let n := e.getAppNumArgs
+  withOverApp info.numArgs do
+    match info.type with
+    | .coe => `((↑$(← withNaryArg info.coercee delab) : $typeStx))
+    | .coeFun =>
+      if n = info.numArgs then
+        `((⇑$(← withNaryArg info.coercee delab) : $typeStx))
+      else
+        withNaryArg info.coercee delab
+    | .coeSort => `((↥$(← withNaryArg info.coercee delab) : $typeStx))
 
 def skip : Tactic := fun stx =>
   Term.withNarrowedArgTacticReuse (argIdx := 1) evalTactic stx
@@ -133,6 +154,11 @@ def onLoad : CommandElabM Unit := do
     key := ``cdot,
     declName := ``skip,
     value := skip,
+  }) |>
+  (delabAttribute.ext.addEntry · {
+    key := `app,
+    declName := ``delabCoeWithType,
+    value := delabCoeWithType,
   })
 
 def getResult : CommandElabM (Array ElaborationTree) := do

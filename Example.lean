@@ -3,9 +3,13 @@ Copyright (c) 2024 BICMR@PKU. All rights reserved.
 Released under the Apache 2.0 license as described in the file LICENSE.
 Authors: Tony Beta Lambda
 -/
+import Lean
+
+set_option autoImplicit false
+open Lean renaming Name → ame
 open IO in
 def hello : IO Unit :=
-  println! "Hello, world!"
+  println "Hello, world!"
 
 universe u
 variable {α : Type u}
@@ -42,6 +46,8 @@ theorem cdot_test : (∀ A, A → A) ∧ True := by
     exact x
   · constructor
 
+theorem coe_test (n : Nat) (h : n = 0) : ((↑n : Int) = 0) := by simp [h]
+
 theorem comp_test (x : Nat) (h : ∃ k, x = 2 * k) : ∃ k, x + 4 = 2 * k :=
   rcases_test (rcases_test h)
 
@@ -77,3 +83,11 @@ instance : DecidablePred (IsSome (α := α)) := fun a =>
   | none => .isFalse neg_is_some_none
 
 end Option
+
+theorem map_length (f : α → α) (l : List α) : (l.map f).length = l.length := by
+  induction l with | nil | cons _ _ ih => _
+  rfl
+  unfold List.map
+  unfold List.length
+  rewrite [ih]
+  rfl
