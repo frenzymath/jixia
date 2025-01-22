@@ -5,6 +5,10 @@ Authors: Tony Beta Lambda
 -/
 import Lean
 
+/-!
+Test file for jixia
+-/
+
 set_option autoImplicit false
 open Lean renaming Name → ame
 open IO in

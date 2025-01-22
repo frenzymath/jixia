@@ -142,6 +142,10 @@ inductive ElaborationInfo where
 inductive ElaborationTree where
   | mk (info : ElaborationInfo) (ref : Syntax) (children : Array ElaborationTree) : ElaborationTree
 
+structure ModuleInfo where
+  imports : Array Name
+  docstring : Array String
+
 structure LineInfo where
   start : String.Pos
   state : Array Goal

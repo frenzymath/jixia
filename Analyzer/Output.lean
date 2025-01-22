@@ -75,6 +75,8 @@ end
 deriving instance ToJson for SymbolKind, SymbolInfo
 deriving instance ToJson for Variable, Goal
 
+deriving instance ToJson for ModuleInfo
+
 deriving instance ToJson for LineInfo
 
 section

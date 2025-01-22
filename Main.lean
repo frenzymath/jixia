@@ -48,7 +48,7 @@ def jixiaCommand : Cmd := `[Cli|
   "A static analysis tool for Lean 4."
 
   FLAGS:
-    m, «import» : String;  "Import info"
+    m, module : String;  "Module info"
     d, declaration : String;  "Declaration info"
     s, symbol : String;  "Symbol info"
     e, elaboration : String;  "Elaboration info"
