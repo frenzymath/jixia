@@ -145,16 +145,6 @@ def onLoad : CommandElabM Unit := do
   enableInfoTree
   -- TODO: add an option to enable/disable handling `focus`-like tactics
   modifyEnv fun env => env |>
-  (tacticElabAttribute.ext.addEntry · {
-    key := ``Parser.Tactic.focus,
-    declName := ``skip,
-    value := skip,
-  }) |>
-  (tacticElabAttribute.ext.addEntry · {
-    key := ``cdot,
-    declName := ``skip,
-    value := skip,
-  }) |>
   (delabAttribute.ext.addEntry · {
     key := `app,
     declName := ``delabCoeWithType,

@@ -18,7 +18,7 @@ namespace Analyzer
 structure PPSyntax where
   original : Bool
   range : Option String.Range
-  str : String
+  pp? : Option String
 
 def _root_.Lean.Syntax.isOriginal (stx : Syntax) : Bool :=
   match stx.getHeadInfo? with
@@ -26,10 +26,13 @@ def _root_.Lean.Syntax.isOriginal (stx : Syntax) : Bool :=
   | _ => false
 
 def PPSyntax.pp (category : Name) (stx : Syntax) : CoreM PPSyntax := do
+  let pp ← try
+    pure <| some (← ppCategory category stx).pretty
+  catch _ => pure none
   pure {
     original := stx.isOriginal,
     range := stx.getRange?,
-    str := (← ppCategory category stx).pretty,
+    pp? := pp,
   }
 
 structure PPSyntaxWithKind extends PPSyntax where
