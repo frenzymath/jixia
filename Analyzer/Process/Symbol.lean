@@ -27,7 +27,7 @@ where
       | .const name _ => modify fun (v, r) => (v, r.insert name)
       | .app e₁ e₂ => do go e₁; go e₂
       | .lam _ _ e _ => go e
-      | .forallE _ _ e _ => go e
+      | .forallE _ t e _ => do go t; go e
       | .letE _ _ e₁ e₂ _ => do go e₁; go e₂
       | .lit _ => pure ()
       | .mdata _ e => go e
