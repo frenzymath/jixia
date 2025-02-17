@@ -261,8 +261,6 @@ def handleProofWanted (stx : Syntax) : CommandElabM Unit := do
 
 def handleDeclaration (stx : Syntax) : CommandElabM Unit :=
   withEnableInfoTree false do
-    if ← liftMacroM <| hasDeclNamespace stx then
-      throwUnsupportedSyntax
     let info ← getDeclarationInfo stx
     declRef.modify fun a => a.push info
     throwUnsupportedSyntax
