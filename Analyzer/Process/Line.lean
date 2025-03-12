@@ -14,7 +14,7 @@ namespace Analyzer.Process.Line
 -- see Lean.Server.FileWorker.getInteractiveTermGoal
 def getGoalsAt (infoTree : InfoTree) (fileMap : FileMap) (pos : String.Pos) : IO (Array Goal) :=
   let goals := infoTree.goalsAt? fileMap pos
-  goals.toArray.concatMapM fun r => Goal.fromTactic.runWithInfo r.useAfter r.ctxInfo r.tacticInfo
+  goals.toArray.flatMapM fun r => Goal.fromTactic.runWithInfo r.useAfter r.ctxInfo r.tacticInfo
 
 def onLoad : CommandElabM Unit :=
   enableInfoTree
