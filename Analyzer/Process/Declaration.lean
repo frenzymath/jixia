@@ -166,7 +166,7 @@ def getConstructorInfo (parentName : Name) (stx : Syntax) : CommandElabM BaseDec
   let name ← getFullname modifiers <| parentName ++ name
   let signature := stx[4]
   let (binders, type) := expandOptDeclSig signature
-  let params ← liftTermElabM <| binders.getArgs.concatMapM toBinderViews
+  let params ← liftTermElabM <| binders.getArgs.flatMapM toBinderViews
 
   let (ref, signature) ← liftCoreM do pure (← PPSyntax.pp `command stx, ← PPSyntax.pp `term signature)
   return {
