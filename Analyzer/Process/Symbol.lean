@@ -59,11 +59,18 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
   let valueReferences := info.value?.map references
   return { kind, name, type, typeReferences, valueReferences, isProp }
 
-def getResult : CommandElabM (Array SymbolInfo) := do
-  let env ← getEnv
+def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
+  let some module ← searchModuleNameOfFileName path (← initSrcSearchPath) | return #[]
+  let config := {
+    fileMap := default,
+    fileName := path.toString,
+  : Core.Context}
+  unsafe enableInitializersExecution
+  let env ← importModules #[{ module }] .empty
+  let index := env.allImportedModuleNames.getIdx? module
   let f a name info := do
-    if env.getModuleIdxFor? name |>.isSome then return a
-    let si ← liftTermElabM <| getSymbolInfo name info
+    if env.getModuleIdxFor? name != index then return a
+    let (si, _, _) ← getSymbolInfo name info |>.run' |>.toIO config { env }
     return a.push si
   let a ← env.constants.map₁.foldM f #[]
   env.constants.map₂.foldlM f a

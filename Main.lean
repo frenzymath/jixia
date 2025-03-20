@@ -33,11 +33,18 @@ elab "impl_parseOptions" : term => do
 def runCommand (p : Parsed) : IO UInt32 := do
   let file := FilePath.mk <| p.positionalArg! "file" |>.as! String
   let options := impl_parseOptions p
-  let optionAST := parseFlag p "ast"
   if p.hasFlag "initializer" then unsafe
     enableInitializersExecution
   let (_, state) ← withFile file <| run options
+
+  -- additional plugins that does not fit into the general framework
+  let optionAST := parseFlag p "ast"
   optionAST.output state.commands
+
+  let optionSymbol := parseFlag p "symbol"
+  if optionSymbol.isPresent then
+    optionSymbol.output (← Process.Symbol.getResult file)
+
   let messages := state.commandState.messages
   messages.forM fun message => do
     IO.eprint (← message.toString)

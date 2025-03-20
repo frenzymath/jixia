@@ -21,7 +21,6 @@ structure Plugin where
 protected def plugins : Array (Name × Plugin) := #[
   (`module, ⟨ ``Module.getResult, none ⟩),
   (`declaration, ⟨ ``Declaration.getResult, ``Declaration.onLoad ⟩),
-  (`symbol, ⟨ ``Symbol.getResult, none ⟩),
   (`elaboration, ⟨ ``Elaboration.getResult, ``Elaboration.onLoad ⟩),
   (`line, ⟨ ``Line.getResult, ``Line.onLoad ⟩)
 ]
