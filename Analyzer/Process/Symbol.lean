@@ -60,7 +60,12 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
   return { kind, name, type, typeReferences, valueReferences, isProp }
 
 def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
-  let some module ← searchModuleNameOfFileName path (← initSrcSearchPath) | return #[]
+  let sysroot ← findSysroot
+  -- initSearchPath returns IO.appDir / ".." / "src" / "lean" as its last path, which does not make any sense
+  -- apparently renaming "index" to "idx" is far more important than finding bugs like these and making better build systems
+  -- seriously, what is wrong with the Lean core devs???
+  let ssp := (← initSrcSearchPath) ++ [sysroot / "src" / "lean"]
+  let module := (← searchModuleNameOfFileName path ssp).get!
   let config := {
     fileMap := default,
     fileName := path.toString,
