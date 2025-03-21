@@ -35,7 +35,10 @@ def runCommand (p : Parsed) : IO UInt32 := do
   let options := impl_parseOptions p
   if p.hasFlag "initializer" then unsafe
     enableInitializersExecution
-  let (_, state) ← withFile file <| run options
+  let (_, state) ← withFile file do
+    if let some module ← searchModuleNameOfFileName file (← initSrcSearchPath) then
+      Frontend.runCommandElabM <| modifyEnv (·.setMainModule module)
+    run options
 
   -- additional plugins that does not fit into the general framework
   let optionAST := parseFlag p "ast"
