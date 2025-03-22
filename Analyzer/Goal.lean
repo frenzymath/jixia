@@ -32,12 +32,15 @@ def printContext : MetaM (Array Variable) := do
       }
     | .ldecl _ id name type value .. => do
       let type ← instantiateMVars type
+      let value ← try
+        pure <| some (← ppExpr value).pretty
+      catch _ => pure none
       pure {
         id := id.name,
         name := name.simpMacroScopes,
         binderInfo? := none,
         type := (← ppExpr type).pretty,
-        value? := (← ppExpr value).pretty,
+        value? := value,
         isProp := (← inferType type).isProp,
       }
     context := context.push var

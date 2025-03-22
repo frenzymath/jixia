@@ -27,7 +27,7 @@ where
       | .const name _ => modify fun (v, r) => (v, r.insert name)
       | .app e₁ e₂ => do go e₁; go e₂
       | .lam _ _ e _ => go e
-      | .forallE _ _ e _ => go e
+      | .forallE _ t e _ => do go t; go e
       | .letE _ _ e₁ e₂ _ => do go e₁; go e₂
       | .lit _ => pure ()
       | .mdata _ e => go e
@@ -59,11 +59,23 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
   let valueReferences := info.value?.map references
   return { kind, name, type, typeReferences, valueReferences, isProp }
 
-def getResult : CommandElabM (Array SymbolInfo) := do
-  let env ← getEnv
+def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
+  let sysroot ← findSysroot
+  -- initSearchPath returns IO.appDir / ".." / "src" / "lean" as its last path, which does not make any sense
+  -- apparently renaming "index" to "idx" is far more important than finding bugs like these and making better build systems
+  -- seriously, what is wrong with the Lean core devs???
+  let ssp := (← initSrcSearchPath) ++ [sysroot / "src" / "lean"]
+  let module := (← searchModuleNameOfFileName path ssp).get!
+  let config := {
+    fileMap := default,
+    fileName := path.toString,
+  : Core.Context}
+  unsafe enableInitializersExecution
+  let env ← importModules #[{ module }] .empty
+  let index := env.allImportedModuleNames.getIdx? module
   let f a name info := do
-    if env.getModuleIdxFor? name |>.isSome then return a
-    let si ← liftTermElabM <| getSymbolInfo name info
+    if env.getModuleIdxFor? name != index then return a
+    let (si, _, _) ← getSymbolInfo name info |>.run' |>.toIO config { env }
     return a.push si
   let a ← env.constants.map₁.foldM f #[]
   env.constants.map₂.foldlM f a

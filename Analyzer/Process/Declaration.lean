@@ -166,7 +166,7 @@ def getConstructorInfo (parentName : Name) (stx : Syntax) : CommandElabM BaseDec
   let name ← getFullname modifiers <| parentName ++ name
   let signature := stx[4]
   let (binders, type) := expandOptDeclSig signature
-  let params ← liftTermElabM <| binders.getArgs.concatMapM toBinderViews
+  let params ← liftTermElabM <| binders.getArgs.flatMapM toBinderViews
 
   let (ref, signature) ← liftCoreM do pure (← PPSyntax.pp `command stx, ← PPSyntax.pp `term signature)
   return {
@@ -261,8 +261,6 @@ def handleProofWanted (stx : Syntax) : CommandElabM Unit := do
 
 def handleDeclaration (stx : Syntax) : CommandElabM Unit :=
   withEnableInfoTree false do
-    if ← liftMacroM <| hasDeclNamespace stx then
-      throwUnsupportedSyntax
     let info ← getDeclarationInfo stx
     declRef.modify fun a => a.push info
     throwUnsupportedSyntax

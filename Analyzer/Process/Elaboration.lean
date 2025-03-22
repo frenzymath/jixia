@@ -41,7 +41,7 @@ def getDependentsFromGoal (goal : MVarId) : MetaM (Array MVarId × Array FVarId)
   let mut dependentMVars := #[]
   let mut dependentFVars := #[]
   while !mvars.isEmpty do
-    let mvarId := mvars.back
+    let mvarId := mvars.back!
     mvars := mvars.pop
     if visited.contains mvarId then continue
     visited := visited.insert mvarId
@@ -145,16 +145,6 @@ def onLoad : CommandElabM Unit := do
   enableInfoTree
   -- TODO: add an option to enable/disable handling `focus`-like tactics
   modifyEnv fun env => env |>
-  (tacticElabAttribute.ext.addEntry · {
-    key := ``Parser.Tactic.focus,
-    declName := ``skip,
-    value := skip,
-  }) |>
-  (tacticElabAttribute.ext.addEntry · {
-    key := ``cdot,
-    declName := ``skip,
-    value := skip,
-  }) |>
   (delabAttribute.ext.addEntry · {
     key := `app,
     declName := ``delabCoeWithType,
@@ -177,7 +167,9 @@ def getResult : CommandElabM (Array ElaborationTree) := do
       | .ofCustomInfo _ => pure <| .simple "custom"
       | .ofFVarAliasInfo _ => pure <| .simple "alias"
       | .ofFieldRedeclInfo _ => pure <| .simple "redecl"
-      | .ofOmissionInfo _ => pure <| .simple "omission"
+      | .ofDelabTermInfo _ => pure <| .simple "delab"
+      | .ofChoiceInfo _ => pure <| .simple "choice"
+      | .ofPartialTermInfo _ => pure <| .simple "partial"
       pure <| .mk info' info.stx <| children.filterMap id |>.toArray
     )
 

@@ -40,6 +40,8 @@ local instance : ToJson Syntax where
   toJson x := toJson x.getRange?
 local instance : ToJson (Option Syntax) where
   toJson x := toJson <| x.bind Syntax.getRange?
+local instance : ToJson (TSyntax `Lean.Parser.Command.declModifiers) where
+  toJson x := toJson x.raw
 deriving instance ToJson for Attribute, Modifiers, BinderView
 end
 
@@ -74,6 +76,8 @@ end
 
 deriving instance ToJson for SymbolKind, SymbolInfo
 deriving instance ToJson for Variable, Goal
+
+deriving instance ToJson for ModuleInfo
 
 deriving instance ToJson for LineInfo
 
