@@ -27,6 +27,20 @@ def PluginOption.output {α : Type _} [ToJson α] (a : α) : PluginOption → IO
   | .json path =>
     IO.FS.withFile path .write fun h => h.putStrLn <| toJson a |>.compress
 
+/-
+  The following command defines the type that is shown as `Analyzer.Options`.
+  check `impl_parseOptions` in `Main.lean` for an example.
+  The code will be elaborated as
+
+  structure Options where
+    module : PluginOption
+    declaration : PluginOption
+    symbol : PluginOption
+    elaboration : PluginOption
+    line : PluginOption
+
+  which defines a new structure.
+-/
 run_cmd
   let fieldDecls ← Process.plugins.mapM fun (name, _) => do
     return (← `(structExplicitBinder| ($(mkIdent name) : PluginOption)))
@@ -34,6 +48,15 @@ run_cmd
   let cmd ← `(structure $(mkIdent `Options) where $body:structFields)
   elabCommand cmd
 
+/-
+  This piece of code elaborates `impl_onLoad` as
+  fun (options : Options) ↦ do
+    if options.declaration.isPresent then Declarations.onLoad
+    if options.elaboration.isPresent then Elaboration.onLoad
+    if options.line.isPresent then Line.onLoad
+  `if let some p := plugin.onLoad then` checks whether the field `onLoad` exists for the
+  corresponding entry, and only generates code for those with `onLoad`.
+-/
 elab "impl_onLoad" : term => do
   let param ← mkFreshBinderName
   let body ← Process.plugins.foldlM (init := #[]) fun a (name, plugin) => do
@@ -46,6 +69,12 @@ elab "impl_onLoad" : term => do
   let type ← `(Options → CommandElabM Unit)
   elabTerm term (← elabTerm type none)
 
+/-
+  This piece of code elaborates `impl_process` as
+  fun (options : Options) ↦ do
+    if options.module.isPresent then options.module.output (← Module.getResult)
+    ...(another 4 lines are ommitted here)
+-/
 elab "impl_process" : term => do
   let param ← mkFreshBinderName
   let body ← Process.plugins.mapM fun (name, plugin) => do

@@ -30,11 +30,28 @@ elab "impl_parseOptions" : term => do
   let type ← `(Parsed → Options)
   elabTerm val (← elabTerm type none)
 
+/--
+Suppose we continue the example, with `p` having the value given below.
+then the first line parses `TestFile.lean` into a `FilePath`.
+
+`impl_parseOptions` as implemented above, is now elaborated as (something equivalent to?)
+fun p ↦ {
+  module := parseFlag p "module"
+  declaration := parseFlag p "declaration"
+  symbol := parseFlag p "symbol"
+  elaboration := parseFlag p "elaboration"
+  line := parseFlag p "line"}
+where the right hand side takes the value with type `Analyzer.Options`
+See `Analyzer.Process` for how this is defined.
+-/
 def runCommand (p : Parsed) : IO UInt32 := do
   let file := FilePath.mk <| p.positionalArg! "file" |>.as! String
   let options := impl_parseOptions p
+    -- If there is a flag with `longName` "initializer", then `enableInitializersExecution` will be executed.
   if p.hasFlag "initializer" then unsafe
     enableInitializersExecution
+  -- This line runs the file `file` and passes `options` as an argument.
+  -- jump to `Analyzer.Process` for how `run` is implemented.
   let (_, state) ← withFile file do
     if let some module ← searchModuleNameOfFileName file (← initSrcSearchPath) then
       Frontend.runCommandElabM <| modifyEnv (·.setMainModule module)
@@ -70,5 +87,23 @@ def jixiaCommand : Cmd := `[Cli|
     file : String;  "File to process"
 ]
 
+/--
+If given an input in the form
+`lake exe jixia -d Test.decl.json -e Test.elab.json Test.lean`
+then the `args` in the main function is `["-d", "Test.decl.json", "-e", "Test.elab.json", "Test.lean"]`,
+
+It then passes through the function `Cli.Cmd.parse` called inside `Cli.Cmd.validate`,
+and becomes a term of type `Parsed` which has the value: {
+  cmd := c
+  parent? := None
+  flags = #[⟨⟨"d", "declaration", "Declaration info", String⟩, "Test.decl.json"⟩,
+            ⟨⟨"e", "elaboration", "Elaboration info", String⟩, "Test.elab.json"⟩]
+  positionalArgs = #[⟨⟨"file", "File to process", String⟩, "Test.lean"⟩]
+  variableArgs = #[]
+  }
+`Cli.Cmd.validate` then runs the function as `runCommand p` (where `p` denotes the term of type `Parsed` above).
+see the explanation for `runCommand` for what is executed after that.
+
+-/
 def main (args : List String) : IO UInt32 :=
   jixiaCommand.validate args
