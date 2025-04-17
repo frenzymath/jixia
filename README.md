@@ -17,7 +17,7 @@ This project is part of BICMR@PKU AI for math program.
   types, etc.
 - Easy to extend:  jixia's plugin-based design makes it easy to extend while keeping all the advantages above.
 
-### Usage
+### Information available
 
 jixia comes with several plugins.
 - Import: list of imported modules.
@@ -28,19 +28,24 @@ jixia comes with several plugins.
 - Line: proof state at the beginning of each line, as displayed in VSCode infoview.
 - AST: a full dump of parsed commands.
 
-To analyze a single file:
+### Running jixia
+
+1. Clone the jixia source code, for example to `~/jixia`.
+2. Build jixia.  `cd` into `~/jixia` then run `lake build`.  This will generate the executable file, usually located at `~/jixia/.lake/build/bin/jixia`.
+3. Run the analyzer.
+
+If you are analyzing a single file with no external dependencies, i.e., without an accompanying `lakefile.toml`/`lakefile.lean`:
 ```sh
-/path/to/jixia -d Example.decl.json -s Example.sym.json -e Example.elab.json -l Example.lines.json Example.lean
+~/jixia/.lake/build/bin/jixia -d Example.decl.json -s Example.sym.json -e Example.elab.json -l Example.lines.json Example.lean
 ```
 will generate the corresponding json files from the declaration, symbol, elaboration, and line plugins.  If a flag is
 omitted, the corresponding plugin will not run.
 
-To analyze a module in a package, You must first build your package with `lake build` (or with `lake exe cache get`
-for mathlib-based projects).  You also need to set the environment variables to make imports work, or run jixia with
+If you are analyzing a file within a project, you must first build it by running `lake build` (or, if your project is mathlib4 or depends on it, run `lake exe cache get` then `lake build`) in your project root, i.e., where `lakefile.toml`/`lakefile.lean` is located.  Then run
 ```sh
-lake env /path/to/jixia -d Example.decl.json [...other arguments]
+lake env ~/jixia/.lake/build/bin/jixia -d Example.decl.json -s Example.sym.json -e Example.elab.json -l Example.lines.json Example.lean
 ```
-in your project root, i.e., where lakefile.lean is located.
+in your project root.
 
 ### Notes
 
@@ -52,7 +57,7 @@ initializers. In particular, you should include this flag when analyzing mathlib
 ##### Compiler Compatibility
 
 jixia must be built with the *exact* same version of Lean as the file to be analyzed.  jixia is
-known to be compatible with Lean v4.13.0.  To run jixia on a previous version of Lean, try checking out a commit tagged with that version number.  Some functionality may be missing, and the output format may differ significantly.
+known to be compatible with Lean v4.16.0.  To run jixia on a different version of Lean, try checking out a commit with a tag close to that version number, and then manually modify `lean-toolchain` before building jixia.  Some functionality may be missing, and the output format may differ significantly.
 
 ### FAQ
 
