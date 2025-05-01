@@ -98,7 +98,7 @@ def getTacticInfo (ci : ContextInfo) (ti : TacticInfo) : IO TacticElabInfo := do
 
   let before ← TacticM.runWithInfoBefore ci ti <| withOptions setOptions <|
     Goal.fromTactic (extraFun := getUsedInfo')
-  let after ← TacticM.runWithInfoBefore ci ti <| withOptions setOptions <|
+  let after ← TacticM.runWithInfoAfter ci ti <| withOptions setOptions <|
     Goal.fromTactic (extraFun := getUsedInfo)
   pure {
     references := references ti.stx,
