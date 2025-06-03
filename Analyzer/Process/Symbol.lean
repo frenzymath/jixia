@@ -6,8 +6,7 @@ Authors: Tony Beta Lambda
 import Lean
 import Analyzer.Types
 
-open Lean hiding HashSet
-open Elab Term Command Frontend Parser
+open Lean Elab Term Command Frontend Parser
 open Std (HashSet)
 
 namespace Analyzer.Process.Symbol

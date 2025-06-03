@@ -176,7 +176,7 @@ def getConstructorInfo (parentName : Name) (stx : Syntax) : CommandElabM BaseDec
   let scopeInfo ← getScopeInfo
   let mut modifiers ← elabModifiers stx[2]
   if let some leadingDocComment := stx[0].getOptional? then
-    modifiers := { modifiers with docString? := TSyntax.getDocString ⟨leadingDocComment⟩ }
+    modifiers := { modifiers with docString? := some ⟨leadingDocComment⟩ }
   let id := stx[3]
   let name := id.getId
   let name ← getFullname modifiers <| parentName ++ name
