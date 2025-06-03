@@ -1,15 +1,30 @@
 /-
 Copyright (c) 2024 BICMR@PKU. All rights reserved.
 Released under the Apache 2.0 license as described in the file LICENSE.
-Authors: Tony Beta Lambda
+Authors: Tony Beta Lambda, Blueberry
 -/
 import Lean
 import Analyzer.Types
+import Lean.Elab
 
-open Lean Elab Command Parser Term PrettyPrinter
+
+open Lean Elab Command Parser Term PrettyPrinter ScopedEnvExtension
 open TSyntax.Compat
 
 namespace Analyzer.Process.Declaration
+
+
+def getActiveNamespaces (env : Environment) : IO (Array Name) := do
+  let exts ← scopedEnvExtensionsRef.get
+  let mut nsSet : NameSet := {}
+  for ext in exts do
+    match ext.ext.getState env |>.stateStack with
+    | top :: _ =>
+      for ns in top.activeScopes.toList do
+        nsSet := nsSet.insert ns
+    | _ => pure ()
+  return nsSet.toList.toArray
+
 
 -- simplified version of Elab.mkDeclName
 def getFullname (modifiers : Modifiers) (name : Name) : CommandElabM Name := do
@@ -152,6 +167,7 @@ def getScopeInfo : CommandElabM ScopeInfo := do
     levelNames := scope.levelNames.toArray,
     currNamespace := ← getCurrNamespace,
     openDecl := ← getOpenDecls,
+    scopedOpenDecl := ← liftIO <| getActiveNamespaces (← getEnv),
   }
 
 -- see Elab.elabInductive, which is of course also private
