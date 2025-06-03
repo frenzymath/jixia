@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2024 BICMR@PKU. All rights reserved.
 Released under the Apache 2.0 license as described in the file LICENSE.
-Authors: Tony Beta Lambda
+Authors: Tony Beta Lambda, Blueberry
 -/
 import Lean
 
@@ -95,3 +95,37 @@ theorem map_length (f : α → α) (l : List α) : (l.map f).length = l.length :
   unfold List.length
   rewrite [ih]
   rfl
+
+namespace Demo
+
+inductive MyType
+  | val
+
+scoped infix:68 " ≋ " => BEq.beq
+
+scoped instance : BEq MyType where
+  beq _ _ := true
+
+end Demo
+
+
+section
+
+open scoped Demo
+
+def open_scoped_test1 : IO Unit := do
+  let x : Demo.MyType := Demo.MyType.val
+  let y : Demo.MyType := Demo.MyType.val
+  if x ≋ y then
+    IO.println "x and y are equal"
+  else
+    IO.println "x and y are not equal"
+end
+
+section
+
+open scoped Nat
+
+def open_scoped_test2 (x:Nat) : Nat := x + x
+
+end
