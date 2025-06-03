@@ -6,8 +6,7 @@ Authors: Tony Beta Lambda
 import Lean
 import Analyzer.Types
 
-open Lean hiding HashSet HashMap
-open Elab Meta Term
+open Lean Elab Meta Term
 open Std (HashSet HashMap)
 
 namespace Analyzer
@@ -42,6 +41,8 @@ local instance : ToJson (Option Syntax) where
   toJson x := toJson <| x.bind Syntax.getRange?
 local instance : ToJson (TSyntax `Lean.Parser.Command.declModifiers) where
   toJson x := toJson x.raw
+local instance : ToJson (TSyntax `Lean.Parser.Command.docComment) where
+  toJson x := Json.str x.getDocString
 deriving instance ToJson for Attribute, Modifiers, BinderView
 end
 

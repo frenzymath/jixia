@@ -9,8 +9,7 @@ import Lean
 Note on source ranges: we encode all source positions/ranges by byte.
 -/
 
-open Lean hiding HashSet
-open Elab Term PrettyPrinter
+open Lean Elab Term PrettyPrinter
 open Std (HashSet)
 
 namespace Analyzer

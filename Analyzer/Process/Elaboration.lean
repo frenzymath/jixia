@@ -6,8 +6,7 @@ Authors: Tony Beta Lambda, Kokic, Znssong
 import Lean
 import Analyzer.Process.Tactic.Simp
 
-open Lean hiding HashSet HashMap
-open Elab Meta Command Tactic TacticM PrettyPrinter.Delaborator SubExpr
+open Lean Elab Meta Command Tactic TacticM PrettyPrinter.Delaborator SubExpr
 open Std (HashSet HashMap)
 
 namespace Analyzer.Process.Elaboration
