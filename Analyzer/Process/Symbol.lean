@@ -70,7 +70,10 @@ def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
     fileName := path.toString,
   : Core.Context}
   unsafe enableInitializersExecution
+
+  searchPathRef.modify fun sp => sp ++ [⟨ "." ⟩]
   let env ← importModules #[{ module }] .empty
+
   let index := env.allImportedModuleNames.getIdx? module
   let f a name info := do
     if env.getModuleIdxFor? name != index then return a
