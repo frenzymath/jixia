@@ -34,7 +34,11 @@ jixia comes with several plugins.
 2. Build jixia.  `cd` into `~/jixia` then run `lake build`.  This will generate the executable file, usually located at `~/jixia/.lake/build/bin/jixia`.
 3. Run the analyzer.
 
-If you are analyzing a single file with no external dependencies, i.e., without an accompanying `lakefile.toml`/`lakefile.lean`:
+For a single file with no external dependencies, i.e., without an accompanying `lakefile.toml`/`lakefile.lean`, it must be compiled first:
+```sh
+lake env lean -o Example.olean Example.lean
+```
+then, running jixia with
 ```sh
 ~/jixia/.lake/build/bin/jixia -d Example.decl.json -s Example.sym.json -e Example.elab.json -l Example.lines.json Example.lean
 ```
