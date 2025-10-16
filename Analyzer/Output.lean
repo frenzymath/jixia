@@ -43,7 +43,7 @@ local instance : ToJson (TSyntax `Lean.Parser.Command.declModifiers) where
   toJson x := toJson x.raw
 local instance : ToJson (TSyntax `Lean.Parser.Command.docComment) where
   toJson x := Json.str x.getDocString
-deriving instance ToJson for Attribute, Modifiers, BinderView
+deriving instance ToJson for ComputeKind, Attribute, Modifiers, BinderView
 end
 
 section

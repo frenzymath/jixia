@@ -176,7 +176,7 @@ def getConstructorInfo (parentName : Name) (stx : Syntax) : CommandElabM BaseDec
   let scopeInfo ← getScopeInfo
   let mut modifiers ← elabModifiers stx[2]
   if let some leadingDocComment := stx[0].getOptional? then
-    modifiers := { modifiers with docString? := some ⟨leadingDocComment⟩ }
+    modifiers := { modifiers with docString? := some ⟨leadingDocComment, false⟩ }
   let id := stx[3]
   let name := id.getId
   let name ← getFullname modifiers <| parentName ++ name
@@ -242,7 +242,7 @@ def getDeclarationInfo (stx : Syntax) : CommandElabM DeclarationInfo := do
 
   let name := id[0].getId
   let name ← getFullname modifiers name
-  let params ← liftTermElabM <| binders.getArgs.concatMapM toBinderViews
+  let params ← liftTermElabM <| binders.getArgs.flatMapM toBinderViews
 
   let (ref, signature) ← liftCoreM do pure (← PPSyntax.pp `command stx, ← PPSyntax.pp `term signature)
   let info := {

@@ -22,11 +22,11 @@ def collectTacticInfo (ctx : ContextInfo) (info : Info) (a : Array (ContextInfo 
   | _ => a
 
 partial def references : Syntax → HashSet Name
-  | .missing => .empty
+  | .missing => .emptyWithCapacity
   | .node _ _ args =>
-    args.map references |>.foldl (init := .empty) fun s t => s.fold (fun s a => s.insert a) t
-  | .atom _ _ => .empty
-  | .ident _ _ name _ => .empty |>.insert name
+    args.map references |>.foldl (init := .emptyWithCapacity) fun s t => s.fold (fun s a => s.insert a) t
+  | .atom _ _ => .emptyWithCapacity
+  | .ident _ _ name _ => .emptyWithCapacity |>.insert name
 
 def getUsedFVarIds (e : Expr) : MetaM (Array FVarId) :=
   e.collectFVars.run default <&> fun s => s.2.fvarIds
@@ -169,6 +169,7 @@ def getResult : CommandElabM (Array ElaborationTree) := do
       | .ofDelabTermInfo _ => pure <| .simple "delab"
       | .ofChoiceInfo _ => pure <| .simple "choice"
       | .ofPartialTermInfo _ => pure <| .simple "partial"
+      | .ofErrorNameInfo _ => pure <| .simple "errorName"
       pure <| .mk info' info.stx <| children.filterMap id |>.toArray
     )
 
