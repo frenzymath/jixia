@@ -53,7 +53,7 @@ def runCommand (p : Parsed) : IO UInt32 := do
   -- This line runs the file `file` and passes `options` as an argument.
   -- jump to `Analyzer.Process` for how `run` is implemented.
   let (_, state) ← withFile file do
-    if let some module ← searchModuleNameOfFileName file (← initSrcSearchPath) then
+    if let some module ← searchModuleNameOfFileName file (← getSrcSearchPath) then
       Frontend.runCommandElabM <| modifyEnv (·.setMainModule module)
     run options
 

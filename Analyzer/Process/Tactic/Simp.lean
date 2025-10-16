@@ -11,7 +11,7 @@ open Lean Elab Meta Command Tactic
 namespace Analyzer.Process.Tactic.Simp
 
 def getSimpStats (stx : Syntax) : TacticM Simp.Stats := withMainContext do
-  let { ctx, simprocs, dischargeWrapper } ← mkSimpContext stx (eraseLocal := false)
+  let { ctx, simprocs, dischargeWrapper, .. } ← mkSimpContext stx (eraseLocal := false)
   dischargeWrapper.with fun discharge? =>
     simpLocation ctx simprocs discharge? (expandOptLocation stx[5])
 

@@ -12,7 +12,7 @@ open Std (HashSet)
 namespace Analyzer.Process.Symbol
 
 def references (expr : Expr) : HashSet Name :=
-  go expr (.empty, .empty) |>.2.2
+  go expr (.emptyWithCapacity, .emptyWithCapacity) |>.2.2
 where
   go (expr : Expr) : StateM (HashSet UInt64 × HashSet Name) Unit := do
     let data : UInt64 := expr.data
@@ -63,7 +63,7 @@ def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
   -- initSearchPath returns IO.appDir / ".." / "src" / "lean" as its last path, which does not make any sense
   -- apparently renaming "index" to "idx" is far more important than finding bugs like these and making better build systems
   -- seriously, what is wrong with the Lean core devs???
-  let ssp := (← initSrcSearchPath) ++ [sysroot / "src" / "lean"]
+  let ssp := (← getSrcSearchPath) ++ [sysroot / "src" / "lean"]
   let module := (← searchModuleNameOfFileName path ssp).get!
   let config := {
     fileMap := default,
@@ -74,7 +74,7 @@ def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
   searchPathRef.modify fun sp => sp ++ [⟨ "." ⟩]
   let env ← importModules #[{ module }] .empty
 
-  let index := env.allImportedModuleNames.getIdx? module
+  let index := env.allImportedModuleNames.idxOf? module
   let f a name info := do
     if env.getModuleIdxFor? name != index then return a
     let (si, _, _) ← getSymbolInfo name info |>.run' |>.toIO config { env }

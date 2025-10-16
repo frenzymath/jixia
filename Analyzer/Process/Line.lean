@@ -25,7 +25,7 @@ def getResult : CommandElabM (Array LineInfo) := do
   fileMap.positions.mapM fun p => do
     return {
       start := p,
-      state := ← trees.concatMapM fun tree => getGoalsAt tree fileMap p
+      state := ← trees.flatMapM fun tree => getGoalsAt tree fileMap p
     }
 
 end Analyzer.Process.Line
