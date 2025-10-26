@@ -83,6 +83,9 @@ deriving instance ToJson for ModuleInfo
 deriving instance ToJson for LineInfo
 
 section
+local instance : ToJson FVarId where
+  toJson x := toJson x.name
+
 deriving instance ToJson for SpecialValue
 
 local instance : ToJson Syntax where
