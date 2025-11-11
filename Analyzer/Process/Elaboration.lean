@@ -108,7 +108,7 @@ def getTacticInfo (ci : ContextInfo) (ti : TacticInfo) : IO TacticElabInfo := do
 
 def getSpecialValue : Expr → Option SpecialValue
   | .const name .. => some <| .const name
-  | .fvar id .. => some <| .fvar id
+  | .fvar id .. => some <| .fvar id.name
   | _ => none
 
 def getTermInfo (ci : ContextInfo) (ti : TermInfo) : IO (Option TermElabInfo) := do

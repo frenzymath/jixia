@@ -121,7 +121,7 @@ structure TacticElabInfo where
 
 inductive SpecialValue where
   | const : Name → SpecialValue
-  | fvar : FVarId → SpecialValue
+  | fvar : Name → SpecialValue
 
 structure TermElabInfo where
   context : Array Variable
