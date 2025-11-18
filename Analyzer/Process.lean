@@ -4,6 +4,7 @@ Released under the Apache 2.0 license as described in the file LICENSE.
 Authors: Tony Beta Lambda
 -/
 import Lean
+import Analyzer.Process.Common
 import Analyzer.Types
 import Analyzer.Plugin
 import Analyzer.Output
@@ -88,15 +89,10 @@ elab "impl_process" : term => do
   let type ← `(Options → CommandElabM Unit)
   elabTerm term (← elabTerm type none)
 
-def setOptions (opts : Lean.Options) : Lean.Options :=
-  opts
-    |>.set pp.fieldNotation.name false
-    |>.set pp.fullNames.name true
-
 def run (options : Options) : FrontendM Unit := do
   runCommandElabM <| impl_onLoad options
   processCommands
-  runCommandElabM <| withScope (fun scope => { scope with opts := setOptions scope.opts } ) <|
+  runCommandElabM <| withScope (fun scope => { scope with opts := setPPOptions scope.opts } ) <|
     impl_process options
 
 end Analyzer

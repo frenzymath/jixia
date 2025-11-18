@@ -4,6 +4,7 @@ Released under the Apache 2.0 license as described in the file LICENSE.
 Authors: Tony Beta Lambda, Kokic, Znssong
 -/
 import Lean
+import Analyzer.Process.Common
 import Analyzer.Process.Tactic.Simp
 
 open Lean Elab Meta Command Tactic TacticM PrettyPrinter.Delaborator SubExpr
@@ -65,11 +66,6 @@ def getUsedInfo (mvar : MVarId) : MetaM (Option Json) := do
     valueUses: $(valueUses)
   }
 
-def setOptions (opts : Lean.Options) : Lean.Options :=
-  opts
-    |>.set pp.fieldNotation.name false
-    |>.set pp.fullNames.name true
-
 def getTacticInfo (ci : ContextInfo) (ti : TacticInfo) : IO TacticElabInfo := do
   let mut extra := Json.null
   try
@@ -95,9 +91,9 @@ def getTacticInfo (ci : ContextInfo) (ti : TacticInfo) : IO TacticElabInfo := do
     let extra ← getUsedInfo mvar
     return do return .mergeObj (← extra) (← dependencies.get? mvar)
 
-  let before ← TacticM.runWithInfoBefore ci ti <| withOptions setOptions <|
+  let before ← TacticM.runWithInfoBefore ci ti <| withOptions setPPOptions <|
     Goal.fromTactic (extraFun := getUsedInfo')
-  let after ← TacticM.runWithInfoAfter ci ti <| withOptions setOptions <|
+  let after ← TacticM.runWithInfoAfter ci ti <| withOptions setPPOptions <|
     Goal.fromTactic (extraFun := getUsedInfo)
   pure {
     references := references ti.stx,
@@ -112,7 +108,7 @@ def getSpecialValue : Expr → Option SpecialValue
   | _ => none
 
 def getTermInfo (ci : ContextInfo) (ti : TermInfo) : IO (Option TermElabInfo) := do
-  ti.runMetaM ci <| withOptions setOptions try pure <| some {
+  ti.runMetaM ci <| withOptions setPPOptions try pure <| some {
     context := ← Goal.printContext
     type := (← ppExpr (← inferType ti.expr)).pretty
     expectedType := ← ti.expectedType?.mapM fun type => do pure (← ppExpr type).pretty
@@ -120,35 +116,11 @@ def getTermInfo (ci : ContextInfo) (ti : TermInfo) : IO (Option TermElabInfo) :=
     special? := getSpecialValue ti.expr
   } catch _ => pure none
 
-@[delab app]
-def delabCoeWithType : Delab := whenPPOption getPPCoercions do
-  let typeStx ← withType delab
-  let e ← getExpr
-  let .const declName _ := e.getAppFn | failure
-  let some info ← Meta.getCoeFnInfo? declName | failure
-  let n := e.getAppNumArgs
-  withOverApp info.numArgs do
-    match info.type with
-    | .coe => `((↑$(← withNaryArg info.coercee delab) : $typeStx))
-    | .coeFun =>
-      if n = info.numArgs then
-        `((⇑$(← withNaryArg info.coercee delab) : $typeStx))
-      else
-        withNaryArg info.coercee delab
-    | .coeSort => `((↥$(← withNaryArg info.coercee delab) : $typeStx))
-
 def skip : Tactic := fun stx =>
   Term.withNarrowedArgTacticReuse (argIdx := 1) evalTactic stx
 
 def onLoad : CommandElabM Unit := do
   enableInfoTree
-  -- TODO: add an option to enable/disable handling `focus`-like tactics
-  modifyEnv fun env => env |>
-  (delabAttribute.ext.addEntry · {
-    key := `app,
-    declName := ``delabCoeWithType,
-    value := delabCoeWithType,
-  })
 
 def getResult : CommandElabM (Array ElaborationTree) := do
   let trees := (← getInfoTrees).toArray
