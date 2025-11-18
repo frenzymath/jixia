@@ -49,14 +49,17 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
     pure true
   catch _ =>
     pure false
-  let type ← try
+  let typeFull ← try
     let format ← PrettyPrinter.ppExpr type |>.run'
-    pure format.pretty
+    pure <| some format.pretty
   catch _ =>
-    pure type.dbgToString
+    pure none
+  -- TODO: figure out why ppExpr returns fully expanded names even without any options
+  let typeReadable := none
+  let typeFallback := type.dbgToString
   let typeReferences := references info.type
   let valueReferences := info.value?.map references
-  return { kind, name, type, typeReferences, valueReferences, isProp }
+  return { kind, name, typeFull, typeReadable, typeFallback, typeReferences, valueReferences, isProp }
 
 def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
   let sysroot ← findSysroot

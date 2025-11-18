@@ -87,7 +87,12 @@ inductive SymbolKind where
 structure SymbolInfo where
   kind : SymbolKind
   name : Name
-  type : String
+  /-- Pretty-printed type with all notations expanded and all names fully qualified -/
+  typeFull : Option String
+  /-- Human readable type as displayed in info view -/
+  typeReadable : Option String
+  /-- A string representation of the type, in case pretty-printing fails -/
+  typeFallback : String
   /-- Names of constants that the type of this symbol references.  Mathematically, this roughly means "notions
   needed to state the theorem". -/
   typeReferences : HashSet Name
