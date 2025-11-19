@@ -61,10 +61,6 @@ def runCommand (p : Parsed) : IO UInt32 := do
   let optionAST := parseFlag p "ast"
   optionAST.output state.commands
 
-  let optionSymbol := parseFlag p "symbol"
-  if optionSymbol.isPresent then
-    optionSymbol.output (← Process.Symbol.getResult file)
-
   let messages := state.commandState.messages
   messages.forM fun message => do
     IO.eprint (← message.toString)
