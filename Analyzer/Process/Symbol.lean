@@ -5,6 +5,7 @@ Authors: Tony Beta Lambda
 -/
 import Lean
 import Analyzer.Types
+import Analyzer.Process.Common
 
 open Lean Elab Term Command Frontend Parser
 open Std (HashSet)
@@ -32,6 +33,12 @@ where
       | .mdata _ e => go e
       | .proj _ _ e => go e
 
+def ppType (type : Expr) : MetaM (Option String) :=
+  tryCatchRuntimeEx (do
+    let format ← PrettyPrinter.ppExpr type |>.run'
+    pure <| some format.pretty
+  ) (fun _ => pure none)
+
 def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := do
   let kind := match info with
     | .axiomInfo _ => .«axiom»
@@ -49,13 +56,9 @@ def getSymbolInfo (name : Name) (info : ConstantInfo) : TermElabM SymbolInfo := 
     pure true
   catch _ =>
     pure false
-  let typeFull ← try
-    let format ← PrettyPrinter.ppExpr type |>.run'
-    pure <| some format.pretty
-  catch _ =>
-    pure none
+  let typeFull ← withOptions setPPOptions <| ppType type
   -- TODO: figure out why ppExpr returns fully expanded names even without any options
-  let typeReadable := none
+  let typeReadable ← ppType type
   let typeFallback := type.dbgToString
   let typeReferences := references info.type
   let valueReferences := info.value?.map references
@@ -75,7 +78,7 @@ def getResult (path : System.FilePath) : IO (Array SymbolInfo) := do
   unsafe enableInitializersExecution
 
   searchPathRef.modify fun sp => sp ++ [⟨ "." ⟩]
-  let env ← importModules #[{ module }] .empty
+  let env ← importModules #[{ module }] .empty (leakEnv := true) (loadExts := true)
 
   let index := env.allImportedModuleNames.idxOf? module
   let f a name info := do
