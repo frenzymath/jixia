@@ -27,6 +27,7 @@ def printContext : MetaM (Array Variable) := do
         name := name.simpMacroScopes,
         binderInfo? := some bi,
         type := (← ppExpr type).pretty,
+        typeExpr := (← delab type),
         value? := none,
         isProp := (← inferType type).isProp,
       }
@@ -40,6 +41,7 @@ def printContext : MetaM (Array Variable) := do
         name := name.simpMacroScopes,
         binderInfo? := none,
         type := (← ppExpr type).pretty,
+        typeExpr := (← delab type),
         value? := value,
         isProp := (← inferType type).isProp,
       }

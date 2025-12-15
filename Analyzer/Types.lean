@@ -106,6 +106,7 @@ structure Variable where
   name : Name
   binderInfo? : Option BinderInfo
   type : String
+  typeExpr : Syntax
   value? : Option String
   isProp : Bool
 

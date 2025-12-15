@@ -75,23 +75,16 @@ instance : ToJson DeclarationInfo where
   | .ofInductive x => toJson x
 end
 
+deriving instance ToJson for SourceInfo, Syntax.Preresolved, Syntax
+
 deriving instance ToJson for SymbolKind, SymbolInfo
-deriving instance ToJson for Variable, Goal
 
 deriving instance ToJson for ModuleInfo
 
+deriving instance ToJson for Variable, Goal
 deriving instance ToJson for LineInfo
 
-section
 deriving instance ToJson for SpecialValue
-
-local instance : ToJson Syntax where
-  toJson x := json% {
-    kind: $(x.getKind),
-    range: $(x.getRange?),
-    original: $(x.isOriginal),
-    str: $(x.prettyPrint.pretty 0)
-  }
 deriving instance ToJson for TacticElabInfo, TermElabInfo, MacroInfo, ElaborationInfo
 
 private partial def go : ElaborationTree → Json
@@ -103,7 +96,6 @@ private partial def go : ElaborationTree → Json
 
 instance : ToJson ElaborationTree where
   toJson := go
-end
 
 deriving instance ToJson for SourceInfo, Syntax.Preresolved, Syntax
 
