@@ -136,6 +136,7 @@ structure TermElabInfo where
   expectedType : Option String
   typeExpr : Syntax
   value : String
+  valueExpr : Syntax
   special? : Option SpecialValue
 
 structure MacroInfo where
