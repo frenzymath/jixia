@@ -115,6 +115,7 @@ structure Goal where
   context : Array Variable
   mvarId : Name
   type : String
+  typeExpr : Syntax
   isProp : Bool
   extra? : Option Json := none
 
@@ -133,6 +134,7 @@ structure TermElabInfo where
   context : Array Variable
   type : String
   expectedType : Option String
+  typeExpr : Syntax
   value : String
   special? : Option SpecialValue
 

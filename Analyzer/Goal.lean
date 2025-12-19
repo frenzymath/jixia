@@ -60,6 +60,7 @@ def fromMVar (goal : MVarId) (extraFun : MVarId → MetaM (Option Json) := fun _
       context,
       mvarId := goal.name,
       type := (← ppTerm (← delab type)).pretty,
+      typeExpr := (← delab type),
       isProp := (← inferType type).isProp,
       extra?,
     }
