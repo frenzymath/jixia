@@ -87,10 +87,8 @@ deriving instance ToJson for SpecialValue
 
 local instance : ToJson Syntax where
   toJson x := json% {
-    kind: $(x.getKind),
     range: $(x.getRange?),
-    original: $(x.isOriginal),
-    str: $(x.prettyPrint.pretty 0)
+    original: $(x.isOriginal)
   }
 deriving instance ToJson for TacticElabInfo, TermElabInfo, MacroInfo, ElaborationInfo
 

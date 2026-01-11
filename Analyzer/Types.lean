@@ -34,11 +34,19 @@ def PPSyntax.pp (category : Name) (stx : Syntax) : CoreM PPSyntax := do
     pp? := pp,
   }
 
+def PPSyntax.ppWithoutCategory (stx : Syntax) : PPSyntax where
+  original := stx.isOriginal
+  range := stx.getRange?
+  pp? := stx.prettyPrint.pretty 0
+
 structure PPSyntaxWithKind extends PPSyntax where
   kind : Name
 
 def PPSyntaxWithKind.pp (category : Name) (stx : Syntax) : CoreM PPSyntaxWithKind := do
   pure { ← (PPSyntax.pp category stx) with kind := stx.getKind }
+
+def PPSyntaxWithKind.ppWithoutCategory (stx : Syntax) : PPSyntaxWithKind :=
+  { PPSyntax.ppWithoutCategory stx with kind := stx.getKind }
 
 structure ScopeInfo where
   varDecls : Array String
@@ -115,6 +123,7 @@ structure Goal where
   mvarId : Name
   type : String
   isProp : Bool
+  pp : String
   extra? : Option Json := none
 
 structure TacticElabInfo where
@@ -136,7 +145,7 @@ structure TermElabInfo where
   special? : Option SpecialValue
 
 structure MacroInfo where
-  expanded : Syntax
+  expanded : PPSyntaxWithKind
 
 inductive ElaborationInfo where
   | term : TermElabInfo → ElaborationInfo
@@ -145,7 +154,7 @@ inductive ElaborationInfo where
   | simple : String → ElaborationInfo
 
 inductive ElaborationTree where
-  | mk (info : ElaborationInfo) (ref : Syntax) (children : Array ElaborationTree) : ElaborationTree
+  | mk (info : ElaborationInfo) (ref : PPSyntaxWithKind) (children : Array ElaborationTree) : ElaborationTree
 
 structure ModuleInfo where
   imports : Array Name
