@@ -67,8 +67,8 @@ structure BaseDeclarationInfo where
   modifiers : Modifiers
   signature : PPSyntax
   params : Array BinderView
-  type : Option Syntax
-  value : Option Syntax
+  type : Option PPSyntax
+  value : Option PPSyntax
   scopeInfo : ScopeInfo
 
 structure InductiveInfo extends BaseDeclarationInfo where
