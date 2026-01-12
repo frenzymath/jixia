@@ -116,6 +116,8 @@ structure Variable where
   type : String
   value? : Option String
   isProp : Bool
+  isLet : Bool
+  isReferencedLater : Bool
 
 structure Goal where
   tag : Name
