@@ -184,6 +184,7 @@ def getConstructorInfo (parentName : Name) (stx : Syntax) : CommandElabM BaseDec
   let (binders, type) := expandOptDeclSig signature
   let params ← liftTermElabM <| binders.getArgs.flatMapM toBinderViews
 
+  let type ← type.mapM fun t => liftCoreM do pure (← PPSyntax.pp `term t)
   let (ref, signature) ← liftCoreM do pure (← PPSyntax.pp `command stx, ← PPSyntax.pp `term signature)
   return {
     kind := "constructor",
@@ -243,6 +244,8 @@ def getDeclarationInfo (stx : Syntax) : CommandElabM DeclarationInfo := do
   let name := id[0].getId
   let name ← getFullname modifiers name
   let params ← liftTermElabM <| binders.getArgs.flatMapM toBinderViews
+  let type ← type.mapM fun t => liftCoreM do pure (← PPSyntax.pp `term t)
+  let value ← value.mapM fun t => liftCoreM do pure (← PPSyntax.pp `term t)
 
   let (ref, signature) ← liftCoreM do pure (← PPSyntax.pp `command stx, ← PPSyntax.pp `term signature)
   let info := {

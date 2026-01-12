@@ -129,7 +129,7 @@ def getResult : CommandElabM (Array ElaborationTree) := do
       let info' ← match info with
       | .ofTacticInfo ti => .tactic <$> getTacticInfo ci ti
       | .ofTermInfo ti => pure <| .term <$> (← getTermInfo ci ti) |>.getD <| .simple "term"
-      | .ofMacroExpansionInfo mi => pure <| .macro { expanded := mi.output }
+      | .ofMacroExpansionInfo mi => pure <| .macro { expanded := PPSyntaxWithKind.ppWithoutCategory mi.output }
       | .ofCommandInfo _ => pure <| .simple "command"
       | .ofFieldInfo _ => pure <| .simple "field"
       | .ofOptionInfo _ => pure <| .simple "option"
@@ -142,7 +142,7 @@ def getResult : CommandElabM (Array ElaborationTree) := do
       | .ofChoiceInfo _ => pure <| .simple "choice"
       | .ofPartialTermInfo _ => pure <| .simple "partial"
       | .ofErrorNameInfo _ => pure <| .simple "errorName"
-      pure <| .mk info' info.stx <| children.filterMap id |>.toArray
+      pure <| .mk info' (PPSyntaxWithKind.ppWithoutCategory info.stx) <| children.filterMap id |>.toArray
     )
 
 
