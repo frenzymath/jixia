@@ -14,7 +14,7 @@ namespace Analyzer.Process.Elaboration
 open Analyzer.Process.Tactic
 
 @[reducible]
-def String.Range.lt (r : String.Range) (r' : String.Range) : Prop :=
+def String.Range.lt (r : Lean.Syntax.Range) (r' : Lean.Syntax.Range) : Prop :=
   Prod.lexLt (r.start, r.stop) (r'.start, r'.stop)
 
 def collectTacticInfo (ctx : ContextInfo) (info : Info) (a : Array (ContextInfo × TacticInfo)) : Array (ContextInfo × TacticInfo) :=
@@ -142,6 +142,8 @@ def getResult : CommandElabM (Array ElaborationTree) := do
       | .ofChoiceInfo _ => pure <| .simple "choice"
       | .ofPartialTermInfo _ => pure <| .simple "partial"
       | .ofErrorNameInfo _ => pure <| .simple "errorName"
+      | .ofDocElabInfo _ => pure <| .simple "docElab"
+      | .ofDocInfo _ => pure <| .simple "doc"
       pure <| .mk info' (PPSyntaxWithKind.ppWithoutCategory info.stx) <| children.filterMap id |>.toArray
     )
 

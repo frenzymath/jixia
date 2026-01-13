@@ -13,16 +13,16 @@ namespace Analyzer
 
 instance : ToJson Unit where
   toJson _ := Json.null
-instance : ToJson Substring where
-  toJson x := x.toString
-instance : ToJson String.Pos where
+instance : ToJson Substring.Raw where
+  toJson x := Substring.Raw.toString x
+instance : ToJson String.Pos.Raw where
   toJson x := x.1
 
 instance {α : Type _} [BEq α] [Hashable α] [ToJson α] : ToJson (HashSet α) where
   toJson x := .arr <| x.toArray.map toJson
 instance {α β : Type _} [BEq α] [Hashable α] [ToString α] [ToJson β] : ToJson (HashMap α β) where
   toJson x := .mkObj <| x.toList.map fun (a, b) => (toString a, toJson b)
-instance : ToJson String.Range where
+instance : ToJson Lean.Syntax.Range where
   toJson x := json% [$(x.start), $(x.stop)]
 deriving instance ToJson for Visibility, RecKind, AttributeKind, BinderInfo
 

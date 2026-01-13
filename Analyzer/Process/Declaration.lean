@@ -290,11 +290,13 @@ def onLoad : CommandElabM Unit := do
       key := ``Parser.Command.declaration,
       declName := ``handleDeclaration,
       value := handleDeclaration,
+      isBuiltin := false,
     }) |>
     (commandElabAttribute.ext.addEntry · {
       key := `proof_wanted,
       declName := ``handleProofWanted,
       value := handleProofWanted,
+      isBuiltin := false,
     })
 
 def getResult : CommandElabM (Array DeclarationInfo) := declRef.get

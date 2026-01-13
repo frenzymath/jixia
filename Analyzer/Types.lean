@@ -16,7 +16,7 @@ namespace Analyzer
 
 structure PPSyntax where
   original : Bool
-  range : Option String.Range
+  range : Option Lean.Syntax.Range
   pp? : Option String
 
 def _root_.Lean.Syntax.isOriginal (stx : Syntax) : Bool :=
@@ -163,7 +163,7 @@ structure ModuleInfo where
   docstring : Array String
 
 structure LineInfo where
-  start : String.Pos
+  start : String.Pos.Raw
   state : Array Goal
 
 end Analyzer

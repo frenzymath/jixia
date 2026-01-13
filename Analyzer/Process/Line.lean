@@ -12,7 +12,7 @@ open Lean Elab Meta Command
 namespace Analyzer.Process.Line
 
 -- see Lean.Server.FileWorker.getInteractiveTermGoal
-def getGoalsAt (infoTree : InfoTree) (fileMap : FileMap) (pos : String.Pos) : IO (Array Goal) :=
+def getGoalsAt (infoTree : InfoTree) (fileMap : FileMap) (pos : String.Pos.Raw) : IO (Array Goal) :=
   let goals := infoTree.goalsAt? fileMap pos
   goals.toArray.flatMapM fun r => Goal.fromTactic.runWithInfo r.useAfter r.ctxInfo r.tacticInfo
 
