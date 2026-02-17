@@ -27,7 +27,7 @@ def parseDFlags (args : List String) : IO (Lean.Options × List String) := do
   for arg in args do
     if arg.startsWith "-D" then
       let optStr := arg.drop 2
-      let parts := optStr.splitOn "="
+      let parts := optStr.toString.splitOn "="
       match parts with
       | [key, value] =>
         let name := key.toName
@@ -36,9 +36,9 @@ def parseDFlags (args : List String) : IO (Lean.Options × List String) := do
         else if value == "false" then
           opts := opts.setBool name false
         else if let some n := value.toNat? then
-          opts := opts.setNat name n
+          opts := opts.set name n
         else
-          opts := opts.setString name value
+          opts := opts.set name value
       | [key] =>
         -- `-Dkey` without value means `-Dkey=true`
         opts := opts.setBool key.toName true
