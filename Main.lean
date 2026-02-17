@@ -14,6 +14,39 @@ open Parser hiding mkIdent ident
 open Elab Command Term
 open Analyzer
 
+/-- Global IO.Ref to store Lean `-D` options parsed from command line args. -/
+initialize leanOptsRef : IO.Ref Lean.Options ← IO.mkRef {}
+
+/-- Parse `-D` flags from command line args.
+    Returns (leanOptions, remainingArgs).
+    Supports formats: `-Dkey=value`, `-Dkey` (shorthand for `-Dkey=true`).
+    Value types: `true`/`false` → Bool, numeric → Nat, otherwise → String. -/
+def parseDFlags (args : List String) : IO (Lean.Options × List String) := do
+  let mut opts : Lean.Options := {}
+  let mut remaining : Array String := #[]
+  for arg in args do
+    if arg.startsWith "-D" then
+      let optStr := arg.drop 2
+      let parts := optStr.splitOn "="
+      match parts with
+      | [key, value] =>
+        let name := key.toName
+        if value == "true" then
+          opts := opts.setBool name true
+        else if value == "false" then
+          opts := opts.setBool name false
+        else if let some n := value.toNat? then
+          opts := opts.setNat name n
+        else
+          opts := opts.setString name value
+      | [key] =>
+        -- `-Dkey` without value means `-Dkey=true`
+        opts := opts.setBool key.toName true
+      | _ => throw (IO.userError s!"Invalid -D option: {arg}")
+    else
+      remaining := remaining.push arg
+  return (opts, remaining.toList)
+
 def parseFlag (p : Parsed) (s : String) : PluginOption :=
   match p.flag? s with
   | none => .ignore
@@ -50,9 +83,14 @@ def runCommand (p : Parsed) : IO UInt32 := do
     -- If there is a flag with `longName` "initializer", then `enableInitializersExecution` will be executed.
   if p.hasFlag "initializer" then unsafe
     enableInitializersExecution
+  -- Read Lean `-D` options that were parsed in `main`
+  -- Always set `Elab.async=true` to match `lean` binary behavior (see `runFrontend`).
+  -- Without this, some files fail with kernel errors due to a Lean bug in synchronous mode.
+  let leanOpts := Elab.async.setIfNotSet (← leanOptsRef.get) true
   -- This line runs the file `file` and passes `options` as an argument.
   -- jump to `Analyzer.Process` for how `run` is implemented.
-  let (_, state) ← withFile file do
+  let (_, state) ← withFile file (initState := fun header messages inputCtx =>
+    handleHeader header messages inputCtx leanOpts) do
     if let some module ← searchModuleNameOfFileName file (← getSrcSearchPath) then
       Frontend.runCommandElabM <| modifyEnv (·.setMainModule module)
     run options
@@ -105,5 +143,7 @@ and becomes a term of type `Parsed` which has the value: {
 see the explanation for `runCommand` for what is executed after that.
 
 -/
-def main (args : List String) : IO UInt32 :=
+def main (args : List String) : IO UInt32 := do
+  let (leanOpts, args) ← parseDFlags args
+  leanOptsRef.set leanOpts
   jixiaCommand.validate args
