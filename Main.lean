@@ -84,9 +84,9 @@ def runCommand (p : Parsed) : IO UInt32 := do
   if p.hasFlag "initializer" then unsafe
     enableInitializersExecution
   -- Read Lean `-D` options that were parsed in `main`
-  -- Always set `Elab.async=true` to match `lean` binary behavior (see `runFrontend`).
-  -- Without this, some files fail with kernel errors due to a Lean bug in synchronous mode.
-  let leanOpts := Elab.async.setIfNotSet (← leanOptsRef.get) true
+  -- Note: Elab.async=true causes most InfoTree tactic nodes to be missing,
+  -- so we default to false to preserve full tactic data for elaboration analysis.
+  let leanOpts := Elab.async.setIfNotSet (← leanOptsRef.get) false
   -- This line runs the file `file` and passes `options` as an argument.
   -- jump to `Analyzer.Process` for how `run` is implemented.
   let (_, state) ← withFile file (initState := fun header messages inputCtx =>
