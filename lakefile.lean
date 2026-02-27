@@ -3,7 +3,7 @@ import Lake
 open Lake DSL
 
 require metalib from git "https://github.com/frenzymath/metalib.git" @ "main"
-require Cli from git "https://github.com/leanprover/lean4-cli.git" @ "main"
+require Cli from git "https://github.com/leanprover/lean4-cli.git" @ "v4.26.0"
 
 package jixia where
   leanOptions := #[
