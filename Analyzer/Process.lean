@@ -89,9 +89,24 @@ elab "impl_process" : term => do
   let type ← `(Options → CommandElabM Unit)
   elabTerm term (← elabTerm type none)
 
+/-- Custom `processCommands` that accumulates info trees and messages across commands.
+    In Lean v4.28.0, `elabCommandTopLevel` resets `infoState` and `messages` per-command,
+    so we need to save and restore them to get the accumulated results
+    (matching the v4.24.0 behavior where trees and messages were preserved). -/
+partial def processCommandsAccum : FrontendM Unit := do
+  let prevTrees := (← getCommandState).infoState.trees
+  let prevMsgs := (← getCommandState).messages
+  let done ← processCommand
+  modify fun s => { s with commandState := { s.commandState with
+    messages := prevMsgs ++ s.commandState.messages
+    infoState := { s.commandState.infoState with
+      trees := prevTrees ++ s.commandState.infoState.trees } } }
+  unless done do
+    processCommandsAccum
+
 def run (options : Options) : FrontendM Unit := do
   runCommandElabM <| impl_onLoad options
-  processCommands
+  processCommandsAccum
   runCommandElabM <| withScope (fun scope => { scope with opts := setPPOptions scope.opts } ) <|
     impl_process options
 
