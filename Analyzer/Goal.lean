@@ -38,6 +38,7 @@ def printContext : MetaM (Array Variable) := do
     | .ldecl _ id name type value .. => do
       lctxCopied := lctxCopied.erase id
       let type ← instantiateMVars type
+      let value ← instantiateMVars value
       let value ← try
         pure <| some (← ppExpr value).pretty
       catch _ => pure none
