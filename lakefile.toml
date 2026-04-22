@@ -1,0 +1,24 @@
+name = "jixia"
+defaultTargets = ["jixia"]
+
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+
+[[require]]
+name = "metalib"
+git = "https://github.com/frenzymath/metalib.git"
+rev = "main"
+
+[[require]]
+name = "Cli"
+git = "https://github.com/leanprover/lean4-cli.git"
+rev = "main"
+
+[[lean_lib]]
+name = "Analyzer"
+
+[[lean_exe]]
+name = "jixia"
+root = "Main"
+supportInterpreter = true
