@@ -38,11 +38,14 @@ def getStats (stx : Syntax) : TacticM Simp.Stats :=
   | ``Parser.Tactic.dsimp => getDSimpStats stx
   | _ => getSimpStats stx
 
-def _root_.Lean.Meta.Origin.getName {m : Type → Type} [Monad m] [MonadLCtx m] : Origin → m Name
-  | .decl declName _ _ => pure declName
-  | .fvar fvarId => do return (← getLCtx).get! fvarId |>.userName
-  | .stx id _ => pure id
-  | .other name => pure name
+def _root_.Lean.Meta.Origin.getName? {m : Type → Type} [Monad m] [MonadLCtx m] : Origin → m (Option Name)
+  | .decl declName _ _ => pure <| some declName
+  | .fvar fvarId => do
+      match (← getLCtx).find? fvarId with
+      | some localDecl => return some localDecl.userName
+      | none => return none
+  | .stx id _ => pure <| some id
+  | .other name => pure <| some name
 
 def getUsedTheorems (ci : ContextInfo) (ti : TacticInfo) : IO Json := do
     if ti.stx.isOfKind |> List.any [
@@ -52,7 +55,10 @@ def getUsedTheorems (ci : ContextInfo) (ti : TacticInfo) : IO Json := do
     ] then
       let usedTheorems ← TacticM.runWithInfoBefore ci ti <| withMainContext do
         let simpStats ← getStats ti.stx
-        simpStats.usedTheorems.toArray.foldlM (init := #[]) fun a k _ => do return a.push (← k.getName)
+        simpStats.usedTheorems.toArray.foldlM (init := #[]) fun a k _ => do
+          match ← k.getName? with
+          | some name => return a.push name
+          | none => return a
       return json% {
         usedTheorems: $(usedTheorems)
       }
