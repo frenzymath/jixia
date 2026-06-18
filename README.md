@@ -2,8 +2,7 @@
 
 A static analysis tool for Lean 4.
 
-jixia is a new static analysis tool for Lean 4 with two main purposes in mind: building a Lean-aware IDE and extracting
-useful data for machine learning.
+jixia is a new static analysis tool for Lean 4 with two main purposes in mind: building a Lean-aware IDE and extracting useful data for machine learning.
 
 This project is part of BICMR@PKU AI for math program.
 
@@ -60,8 +59,10 @@ initializers. In particular, you should include this flag when analyzing mathlib
 
 ##### Compiler Compatibility
 
-jixia must be built with the *exact* same version of Lean as the file to be analyzed.  jixia is
-known to be compatible with Lean v4.16.0.  To run jixia on a different version of Lean, try checking out a commit with a tag close to that version number, and then manually modify `lean-toolchain` before building jixia.  Some functionality may be missing, and the output format may differ significantly.
+jixia must be built with the *exact* same Lean version as the file or project being analyzed.  Check the target
+project's `lean-toolchain`, then checkout the matching jixia release branch (recommended) or tag and run `lake build` before analyzing files.  For example, use the `release/v4.28.0-rc1` branch for projects on `leanprover/lean4:v4.28.0-rc1`.
+
+Do not reuse a jixia executable built for another Lean version, even a nearby one; this can produce errors such as `invalid header`, missing constants, or other internal elaboration failures.
 
 ### FAQ
 
