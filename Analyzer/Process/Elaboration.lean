@@ -107,14 +107,37 @@ def getSpecialValue : Expr → Option SpecialValue
   | .fvar id .. => some <| .fvar id.name
   | _ => none
 
+def localDeclExprsAny (p : Expr → Bool) : LocalDecl → Bool
+  | .cdecl (type := type) .. => p type
+  | .ldecl (type := type) (value := value) .. =>
+    p type || p value
+
+def localContextExprsAny (p : Expr → Bool) (lctx : LocalContext) : Bool :=
+  lctx.foldl (fun found ldecl => found || localDeclExprsAny p ldecl) false
+
+def exprHasUnknownMVar (mctx : MetavarContext) (expr : Expr) : Bool :=
+  (expr.findMVar? fun mvarId => (mctx.findDecl? mvarId).isNone).isSome ||
+  (expr.findLevelMVar? fun mvarId => (mctx.findLevelDepth? mvarId).isNone).isSome
+
 def getTermInfo (ci : ContextInfo) (ti : TermInfo) : IO (Option TermElabInfo) := do
-  ti.runMetaM ci <| withOptions setPPOptions try pure <| some {
-    context := ← Goal.printContext
-    type := (← ppExpr (← inferType ti.expr)).pretty
-    expectedType := ← ti.expectedType?.mapM fun type => do pure (← ppExpr type).pretty
-    value := (← ppExpr ti.expr).pretty
-    special? := getSpecialValue ti.expr
-  } catch _ => pure none
+  ti.runMetaM ci <| withOptions setPPOptions <|
+    tryCatchRuntimeEx (try
+      let mctx ← getMCtx
+      if exprHasUnknownMVar mctx ti.expr ||
+          (ti.expectedType?.map (exprHasUnknownMVar mctx)).getD false ||
+          localContextExprsAny (exprHasUnknownMVar mctx) (← getLCtx) then
+        return none
+      let type ← inferType ti.expr
+      if exprHasUnknownMVar (← getMCtx) type then
+        return none
+      pure <| some {
+        context := ← Goal.printContext
+        type := (← ppExpr type).pretty
+        expectedType := ← ti.expectedType?.mapM fun type => do pure (← ppExpr type).pretty
+        value := (← ppExpr ti.expr).pretty
+        special? := getSpecialValue ti.expr
+      }
+    catch _ => pure none) fun _ => pure none
 
 def skip : Tactic := fun stx =>
   Term.withNarrowedArgTacticReuse (argIdx := 1) evalTactic stx
