@@ -119,16 +119,32 @@ def exprHasUnknownMVar (mctx : MetavarContext) (expr : Expr) : Bool :=
   (expr.findMVar? fun mvarId => (mctx.findDecl? mvarId).isNone).isSome ||
   (expr.findLevelMVar? fun mvarId => (mctx.findLevelDepth? mvarId).isNone).isSome
 
+def proofModeHypMarkerName : Name :=
+  `Std.Tactic.Do.MGoalHypMarker
+
+def exprHasBareProofModeHypMarker (expr : Expr) : Bool :=
+  (expr.findExt? fun subExpr =>
+    if let .const name .. := subExpr then
+      if name == proofModeHypMarkerName then
+        .found
+      else
+        .done
+    else
+      .visit).isSome
+
 def getTermInfo (ci : ContextInfo) (ti : TermInfo) : IO (Option TermElabInfo) := do
   ti.runMetaM ci <| withOptions setPPOptions <|
     tryCatchRuntimeEx (try
       let mctx ← getMCtx
-      if exprHasUnknownMVar mctx ti.expr ||
-          (ti.expectedType?.map (exprHasUnknownMVar mctx)).getD false ||
-          localContextExprsAny (exprHasUnknownMVar mctx) (← getLCtx) then
+      let shouldSkipExpr := fun mctx expr =>
+        exprHasUnknownMVar mctx expr || exprHasBareProofModeHypMarker expr
+      let lctx ← getLCtx
+      if shouldSkipExpr mctx ti.expr ||
+          (ti.expectedType?.map (shouldSkipExpr mctx)).getD false ||
+          localContextExprsAny (shouldSkipExpr mctx) lctx then
         return none
       let type ← inferType ti.expr
-      if exprHasUnknownMVar (← getMCtx) type then
+      if shouldSkipExpr (← getMCtx) type then
         return none
       pure <| some {
         context := ← Goal.printContext
