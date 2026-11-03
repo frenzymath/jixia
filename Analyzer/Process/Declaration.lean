@@ -208,6 +208,12 @@ def getDeclarationInfo (stx : Syntax) : CommandElabM DeclarationInfo := do
   let kind := decl.getKind
 
   let .str _ kindStr := kind | unreachable!
+  -- `structure` and `class` share the same parser (`structureTk <|> classTk`),
+  -- so report the keyword that was actually used.
+  let kindStr :=
+    if kind == ``Command.«structure» && decl[0].getKind == ``Command.classTk then
+      "class"
+    else kindStr
 
   let signature := match kind with
     | ``Command.abbrev
@@ -216,14 +222,17 @@ def getDeclarationInfo (stx : Syntax) : CommandElabM DeclarationInfo := do
     | ``Command.opaque
     | ``Command.axiom
     | ``Command.inductive
-    | ``Command.classInductive =>
+    | ``Command.coinductive
+    | ``Command.classInductive
+    | ``Command.structure =>
+      -- v4.29 ``structure`` layout:
+      --   [0] structureTk/classTk  [1] declId  [2] optDeclSig
+      --   [3] optional extends     [4] optional "where"/":=" fields  [5] optDeriving
       decl[2]
     | ``Command.instance =>
       decl[4]
     | ``Command.example =>
       decl[1]
-    | ``Command.structure =>
-      Syntax.node2 .none ``Command.optDeclSig decl[2] decl[4]
     | _ => unreachable!
 
   let (id, binders, type, value) := ← if isDefLike decl then do
@@ -234,10 +243,13 @@ def getDeclarationInfo (stx : Syntax) : CommandElabM DeclarationInfo := do
     | ``Command.«axiom» =>
       expandDeclSig decl[2] |>.map id some
     | ``Command.«inductive»
+    | ``Command.«coinductive»
     | ``Command.classInductive =>
       expandOptDeclSig decl[2]
     | ``Command.«structure» =>
-      (decl[2], decl[4])
+      -- `decl[2]` is the `optDeclSig` node (binders + optional type);
+      -- `decl[4]` is the `where`/`:=` clause, not the type.
+      expandOptDeclSig decl[2]
     | _ => unreachable!
     return (decl[1], binders, type, none)
 
